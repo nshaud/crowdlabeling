@@ -1,0 +1,38 @@
+<h1>A collaborative app for image labeling</h1>
+  <p>Room number : <%= room %></p>
+  <p>Image : <img src="<%= base_path + image_path%>" /></p>
+
+  <div id="chat">
+    <h2>Chat</h2>
+  </div>
+
+  <input type="text" name="message" id="chat_input" />
+  <button id="chat_button"/>Send</button>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Init socket.io
+    var socket = io.connect('<%= base_path %>');
+
+    var button = document.getElementById('chat_button');
+    var input = document.getElementById('chat_input');
+
+    // Add listener to the button to send messages
+    button.onclick = function(){
+        var message = input.value;
+        socket.emit('chat_message', message);
+        var new_message = document.createElement('p');
+        new_message.innerHTML = message;
+        document.getElementById('chat').appendChild(new_message);
+        console.log('Chat message sent : ' + input.value);
+    }
+
+    // Add messages from server to the chat div
+    socket.on('chat_message', function(message) {
+        console.log('Chat message received : ' + message);
+        var new_message = document.createElement('p');
+        new_message.innerHTML = message;
+        console.log(new_message);
+        document.getElementById('chat').appendChild(new_message);
+    });
+  </script>
