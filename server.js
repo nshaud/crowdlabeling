@@ -50,6 +50,10 @@ io.sockets.on('connection', function(socket) {
         console.log('A client entered the room : ' + socket.room);
     });
 
+    socket.on('new_tag', function(tag) {
+        console.log('A client added a new tag : ' + tag + ' in room ' + socket.room);
+    });
+
     console.log('A new client has connected !');
 });
 

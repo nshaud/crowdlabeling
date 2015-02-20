@@ -1,6 +1,8 @@
 <h1>A collaborative app for image labeling</h1>
   <p>Room number : <%= room %></p>
-  <p>Image : <img src="<%= base_path + image_path%>" /></p>
+  <p>Image :</p>
+
+  <canvas id="canvas" width=300 height=300></canvas>
 
   <div id="chat">
     <h2>Chat</h2>
@@ -38,3 +40,32 @@
         document.getElementById('chat').appendChild(new_message);
     });
   </script>
+  <script>
+    function getMousePos(canvas, event){
+        var rect = canvas.getBoundingClientRect();
+        return {
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top
+        };
+    }
+
+    var canvas = document.getElementById('canvas');
+    var context = canvas.getContext('2d');
+    canvas.addEventListener('mousedown', function(event){
+        var mousePos = getMousePos(canvas, event);
+        console.log(mousePos);
+        var tag = window.prompt('Which tag do you want to add ?', 'tag');
+        context.lineWidth = 1;
+        context.fillStyle = "#CC00FF";
+        context.lineStyle = "#ffff00";
+        context.fillText(tag, mousePos.x, mousePos.y);
+        socket.emit('new_tag', tag);
+    });
+ 
+    var img = new Image();
+    img.src = '<%= base_path + image_path %>';
+    img.onload = function(){
+        context.drawImage(img, 0, 0);
+    };
+  </script>
+
