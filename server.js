@@ -71,6 +71,19 @@ io.sockets.on('connection', function(socket) {
         numberOfConfirmationsInRooms[socket.room] = 1;
         socket.broadcast.to(socket.room).emit('tag_intent', tag);
         console.log('[' + socket.room + '] A client wants to insert a new tag : ' + tag.label);
+
+        // send confirmation of the user who wants to create the tag
+        var data = {
+            tag: tag,
+            nConfirms: numberOfConfirmationsInRooms[socket.room],
+            nClients: numberOfClientsInRooms[socket.room]
+        };
+        io.sockets.in(socket.room).emit('tag_confirm', data);
+
+        if (numberOfConfirmationsInRooms[socket.room] == numberOfClientsInRooms[socket.room]) {
+            console.log('[' + socket.room + '] Tag creation : ' + tag.label);
+            io.sockets.in(socket.room).emit('tag_creation', tag);
+        }
     });
 
     socket.on('tag_confirm', function(tag) {
@@ -79,6 +92,13 @@ io.sockets.on('connection', function(socket) {
         console.log('[' + socket.room + '] A client confirmed the tag : ' + tag.label);
         console.log('[' + socket.room + '] Number of confirmations : ' + numberOfConfirmationsInRooms[socket.room]);
         console.log('[' + socket.room + '] Number of clients : ' + numberOfClientsInRooms[socket.room]);
+
+        var data = {
+            tag: tag,
+            nConfirms: numberOfConfirmationsInRooms[socket.room],
+            nClients: numberOfClientsInRooms[socket.room]
+        };
+        io.sockets.in(socket.room).emit('tag_confirm', data);
 
         if (numberOfConfirmationsInRooms[socket.room] == numberOfClientsInRooms[socket.room]) {
             console.log('[' + socket.room + '] Tag creation : ' + tag.label);

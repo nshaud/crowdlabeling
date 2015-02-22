@@ -7,16 +7,34 @@
 
   <p>Room number : <%= room %></p>
   
-  <div class="row">
+  <div class="row" style="height: 500px;">
     
-    <div id="image" class="col-md-8">
+    <div class="col-md-8" style="height: 100%;">
 
       <h3>Image : <%= image_path %></h3>
-      <canvas id="canvas" width=300 height=300></canvas>
+      
+      <div id="image">
+        <div id="overlay" style="display: none;"> </div>
+        
+        <div id="progress_confirm" style="display: none;">
+          <div style="margin-top: 90px;">
+            <p id="tag_label">Tag "label" is being processed.</p>
+            <p>Please wait for all confirmations</p>
+            <div class="progress" style="margin-top: 10px;">
+              <div id="progress_bar" class="progress-bar progress-bar-success progress-bar-striped active" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: 0%;">
+                <span class="sr-only">60% Complete</span>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+
+        <canvas id="canvas" width=300 height=300></canvas>
+      </div>
       
     </div>
 
-    <div id="chat" class="col-md-4">
+    <div class="col-md-4" style="height: 100%;">
       
       <h3>Chat</h3>
 
@@ -94,15 +112,10 @@
             label: tag,
             position: mousePos
           };
+          showProgressConfirm();
           socket.emit('tag_intent', data);
         }
       });
-  });
-
-  canvas.addEventListener('mouseup', function(event){
-      var mousePos = getMousePos(canvas, event);
-      console.log(mousePos);
-      // socket.emit('new_tag', tag);
   });
 
   // Add messages from server to the chat div
@@ -128,24 +141,29 @@
       console.log('New tag intent : ' + tag.label);
       bootbox.confirm('User wants to insert the tag: ' + tag.label, function (confirmation) {
         if (confirmation) {
-          console.log('confirmed');
           socket.emit('tag_confirm', tag);
+          showProgressConfirm();
         } else {
-          console.log('canceled');
           socket.emit('tag_cancel', tag);
         }
       });
       
   });
-
-  socket.on('tag_creation', function(tag) {
-      console.log('Tag creation : ' + tag.label);
-      insertTag(context, tag);
+  
+  socket.on('tag_confirm', function(data) {
+      updateProgressConfirm(data.tag.label, data.nConfirms, data.nClients);
   });
 
   socket.on('tag_cancel', function(tag) {
       console.log('Tag cancel : ' + tag.label);
       bootbox.hideAll();
+      hideProgressConfirm();
+  });
+
+  socket.on('tag_creation', function(tag) {
+      console.log('Tag creation : ' + tag.label);
+      insertTag(context, tag);
+      hideProgressConfirm();
   });
 
   // Declaration of auxiliary functions
@@ -164,9 +182,27 @@
   }
 
   function insertTag(context, tag) {
-    context.lineWidth = 1;
-    context.fillStyle = "#CC00FF";
-    context.lineStyle = "#ffff00";
-    context.fillText(tag.label, tag.position.x, tag.position.y);
+      context.lineWidth = 1;
+      context.fillStyle = "#CC00FF";
+      context.lineStyle = "#ffff00";
+      context.fillText(tag.label, tag.position.x, tag.position.y);
   }
+
+  function hideProgressConfirm() {
+      document.getElementById('overlay').style.display = 'none';
+      document.getElementById('progress_confirm').style.display = 'none';
+      updateProgressConfirm('label', 0, 1); // reset : put dummy data in the progress bar
+  }
+
+  function showProgressConfirm() {
+      document.getElementById('overlay').style.display = 'block';
+      document.getElementById('progress_confirm').style.display = 'block';
+  }
+
+  function updateProgressConfirm(tag, nbOfConfirms, nbOfClients) {
+    var progress = (nbOfConfirms/nbOfClients) * 100;
+    document.getElementById('progress_bar').style.width = progress + '%';
+    document.getElementById('tag_label').innerHTML = 'Tag "' + tag + '" is being processed.';
+  }
+
 </script>

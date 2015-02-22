@@ -1,10 +1,6 @@
 #chat_text {
-  height: 500px;
-  max-height: 500px;
+  height: 100%;
   overflow: scroll;
-}
-
-#chat_text {
   list-style: none;
   background: #e5e5e5;
   margin: 0;
@@ -78,3 +74,29 @@ canvas {
   border: 1px solid black;
 }
 
+#image {
+  height: 100%;
+  position: relative;
+}
+
+#overlay {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 10;
+}
+
+#progress_confirm {
+    width: 70%;
+    height: 50%;
+    overflow: auto;
+    margin: auto;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background-color: #ffffff;
+    z-index: 11;
+    box-shadow: 0 3px 2px rgba(0, 0, 0, 0.2);
+    padding-left: 20px;
+    padding-right: 20px;
+}
