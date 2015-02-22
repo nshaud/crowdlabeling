@@ -1,71 +1,171 @@
-<h1>A collaborative app for image labeling</h1>
+<link rel="stylesheet" type="text/css" href="/styles/room.css">
+
+<div class="container">
+  <h1>CrowdLabeling</h1>
+
+  <h3>A collaborative app for image labeling</h3>
+
   <p>Room number : <%= room %></p>
-  <p>Image :</p>
+  
+  <div class="row">
+    
+    <div id="image" class="col-md-8">
 
-  <canvas id="canvas" width=300 height=300></canvas>
+      <h3>Image : <%= image_path %></h3>
+      <canvas id="canvas" width=300 height=300></canvas>
+      
+    </div>
 
-  <div id="chat">
-    <h2>Chat</h2>
+    <div id="chat" class="col-md-4">
+      
+      <h3>Chat</h3>
+
+      <ol id="chat_text"></ol>
+      
+      <div class="input-group">
+        <input id="chat_input" type="text" class="form-control" name="message" autocomplete="off">
+        <span class="input-group-btn">
+          <button id="chat_button" class="btn btn-default" type="button">Send</button>
+        </span>
+      </div>
+
+    </div>
+
   </div>
 
-  <input type="text" name="message" id="chat_input" />
-  <button id="chat_button"/>Send</button>
+</div>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    // Init socket.io
-    var socket = io.connect('<%= base_path %>');
 
-    socket.emit('join_room', '<%= room %>');
+<!-- Scripts -->
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  // Init socket.io
+  var socket = io.connect('<%= base_path %>');
 
-    var button = document.getElementById('chat_button');
-    var input = document.getElementById('chat_input');
+  socket.emit('join_room', '<%= room %>');
 
-    // Add listener to the button to send messages
-    button.onclick = function(){
-        var message = input.value;
+  var button = document.getElementById('chat_button');
+  var input = document.getElementById('chat_input');
+
+  // Add listener to the button to send messages
+  button.onclick = function(){
+      var message = input.value;
+
+      if (message !== '') {
         socket.emit('chat_message', message);
-        var new_message = document.createElement('p');
-        new_message.innerHTML = message;
-        document.getElementById('chat').appendChild(new_message);
+        var new_message = document.createElement('li');
+        new_message.className = 'self';
+        new_message.innerHTML = createMessageDiv(message);
+        var chatText = document.getElementById('chat_text');
+        chatText.appendChild(new_message);
+        chatText.scrollTop = chatText.scrollHeight;
+        document.getElementById('chat_input').value = '';
         console.log('Chat message sent : ' + input.value);
+      }
+  };
+  // Detect when user press Enter inside the chat input
+  document.getElementById('chat_input').onkeypress = function(e){
+    if (!e) e = window.event;
+    var keyCode = e.keyCode || e.which;
+    if (keyCode == '13'){
+      // Enter pressed
+      document.getElementById('chat_button').click();
+      return false;
     }
+  };
 
-    // Add messages from server to the chat div
-    socket.on('chat_message', function(message) {
-        console.log('Chat message received : ' + message);
-        var new_message = document.createElement('p');
-        new_message.innerHTML = message;
-        console.log(new_message);
-        document.getElementById('chat').appendChild(new_message);
-    });
-  </script>
-  <script>
-    function getMousePos(canvas, event){
-        var rect = canvas.getBoundingClientRect();
-        return {
-            x: event.clientX - rect.left,
-            y: event.clientY - rect.top
-        };
-    }
+  var canvas = document.getElementById('canvas');
+  var context = canvas.getContext('2d');
 
-    var canvas = document.getElementById('canvas');
-    var context = canvas.getContext('2d');
-    canvas.addEventListener('mousedown', function(event){
-        var mousePos = getMousePos(canvas, event);
-        console.log(mousePos);
-        var tag = window.prompt('Which tag do you want to add ?', 'tag');
-        context.lineWidth = 1;
-        context.fillStyle = "#CC00FF";
-        context.lineStyle = "#ffff00";
-        context.fillText(tag, mousePos.x, mousePos.y);
-        socket.emit('new_tag', tag);
-    });
- 
-    var img = new Image();
-    img.src = '<%= base_path + image_path %>';
-    img.onload = function(){
-        context.drawImage(img, 0, 0);
-    };
-  </script>
+  var img = new Image();
+  img.src = '<%= base_path + image_path %>';
+  console.log('<%= base_path + image_path %>');
+  img.onload = function(){
+      context.drawImage(img, 0, 0);
+  };
 
+  canvas.addEventListener('mousedown', function(event){
+      var mousePos = getMousePos(canvas, event);
+
+      bootbox.prompt('Which tag do you want to add ?', function(tag) {                
+        if (tag !== null) {
+          var data = {
+            label: tag,
+            position: mousePos
+          };
+          socket.emit('tag_intent', data);
+        }
+      });
+  });
+
+  canvas.addEventListener('mouseup', function(event){
+      var mousePos = getMousePos(canvas, event);
+      console.log(mousePos);
+      // socket.emit('new_tag', tag);
+  });
+
+  // Add messages from server to the chat div
+  socket.on('chat_message', function(message) {
+      console.log('Chat message received : ' + message);
+      var new_message = document.createElement('li');
+      new_message.className = 'other';
+      new_message.innerHTML = createMessageDiv(message);
+      document.getElementById('chat_text').appendChild(new_message);
+  });
+
+  // Inform when another user enters the room
+  socket.on('user_enter', function(message) {
+      console.log('Chat message received : ' + message);
+      var new_message = document.createElement('li');
+      new_message.className = 'info';
+      new_message.innerHTML = '<div>- ' + message + ' -</div>';
+      document.getElementById('chat_text').appendChild(new_message);
+  });
+
+  // receive new tags from other clients
+  socket.on('tag_intent', function(tag) {
+      console.log('New tag intent : ' + tag.label);
+      bootbox.confirm('User wants to insert the tag: ' + tag.label, function (confirmation) {
+        if (confirmation) {
+          console.log('confirmed');
+          socket.emit('tag_confirm', tag);
+        } else {
+          console.log('canceled');
+          socket.emit('tag_cancel', tag);
+        }
+      });
+      
+  });
+
+  socket.on('tag_creation', function(tag) {
+      console.log('Tag creation : ' + tag.label);
+      insertTag(context, tag);
+  });
+
+  socket.on('tag_cancel', function(tag) {
+      console.log('Tag cancel : ' + tag.label);
+      bootbox.hideAll();
+  });
+
+  // Declaration of auxiliary functions
+
+  function createMessageDiv(message) {
+    var date = new Date();
+    return '<div class="avatar"></div><div class="message"><p>' + message + '</p><time datetime="' + date.toISOString() + '">' + date.toLocaleString() + '</time></div>';
+  }
+
+  function getMousePos(canvas, event){
+      var rect = canvas.getBoundingClientRect();
+      return {
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top
+      };
+  }
+
+  function insertTag(context, tag) {
+    context.lineWidth = 1;
+    context.fillStyle = "#CC00FF";
+    context.lineStyle = "#ffff00";
+    context.fillText(tag.label, tag.position.x, tag.position.y);
+  }
+</script>

@@ -6,9 +6,13 @@ A web-application for labeling images together.
 
 First, install node.js.
 
-Then, install **express**, **ejs** and **socket.io** with **npm** :
+Then, install **express**, **ejs**, **socket.io** and **bower** with **npm** :
 
-    npm install express ejs socket.io
+    npm install express ejs socket.io bower
+
+Install bower dependencies :
+
+    bower install
 
 Start the node.js server
 
