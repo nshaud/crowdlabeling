@@ -23,12 +23,12 @@ li.info div {
   text-align: center;
 }
 
-li.other {
+li.self {
   justify-content: flex-end;
   align-items: flex-end;
 }
 
-li.other .avatar {
+li.self .avatar {
   order: 2;
   content: "";
   bottom: 0;
@@ -41,12 +41,12 @@ li.other .avatar {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-li.self .message {
+li.other .message {
   order: 1;
   border-bottom-right-radius: 0;
 }
 
-li.self .avatar {
+li.other .avatar {
   content: "";
   top: 0;
   right: 0;
@@ -72,18 +72,6 @@ li.self .avatar {
   background-color: gray;
   width: 80%;
   height: 100%;
-}
-
-#image {
-  position: relative;
-}
-
-#image canvas, #overlay {
-  position: absolute;
-}
-
-#overlay {
-  width: 100%;
 }
 
 canvas {
