@@ -13,6 +13,7 @@ var io = require('socket.io')(server);
 app.use('/styles', express.static(__dirname + '/styles'));
 app.use('/scripts', express.static(__dirname + '/scripts'));
 app.use('/bower_components', express.static(__dirname + '/bower_components'));
+app.use('/fonts', express.static(__dirname + '/bower_components/bootstrap/fonts'));
 
 // Root renders the layout
 app.get('/', function(req, res) {

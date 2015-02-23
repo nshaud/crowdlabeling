@@ -1,68 +1,65 @@
 <link rel="stylesheet" type="text/css" href="/styles/room.css">
 
-<div class="container">
-  <h1>CrowdLabeling</h1>
+<h1>CrowdLabeling</h1>
 
-  <h3>A collaborative app for image labeling</h3>
+<h3>A collaborative app for image labeling</h3>
 
-  <p>Room number : <%= room %></p>
+<p>Room number : <%= room %></p>
+
+<div class="row" >
   
-  <div class="row" >
-    
-    <div class="col-md-8" style="height: 500px;">
+  <div class="col-md-8" style="height: 500px;">
 
-      <h3>Image : <%= image_path %></h3>
+    <h3>Image : <%= image_path %></h3>
+    
+    <div id="image">
+      <div id="overlay" style="display: none;"> </div>
       
-      <div id="image">
-        <div id="overlay" style="display: none;"> </div>
-        
-        <div id="progress_confirm" style="display: none;">
-          <div style="margin-top: 90px;">
-            <p id="tag_label">Tag "label" is being processed.</p>
-            <p>Please wait for all confirmations</p>
-            <div class="progress" style="margin-top: 10px;">
-              <div id="progress_bar" class="progress-bar progress-bar-success progress-bar-striped active" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: 0%;">
-                <span class="sr-only">60% Complete</span>
-              </div>
+      <div id="progress_confirm" style="display: none;">
+        <div style="margin-top: 90px;">
+          <p id="tag_label">Tag "label" is being processed.</p>
+          <p>Please wait for all confirmations</p>
+          <div class="progress" style="margin-top: 10px;">
+            <div id="progress_bar" class="progress-bar progress-bar-success progress-bar-striped active" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: 0%;">
+              <span class="sr-only">60% Complete</span>
             </div>
           </div>
-          
         </div>
-
-        <canvas id="canvas" width=300 height=300></canvas>
+        
       </div>
 
-      
-      
-    </div>
-
-    <div class="col-md-4" style="height: 500px;">
-      
-      <h3>Chat</h3>
-
-      <ol id="chat_text"></ol>
-      
-      <div class="input-group">
-        <input id="chat_input" type="text" class="form-control" name="message" autocomplete="off">
-        <span class="input-group-btn">
-          <button id="chat_button" class="btn btn-default" type="button">Send</button>
-        </span>
-      </div>
-
+      <canvas id="canvas" width=300 height=300></canvas>
     </div>
 
     
-
-  </div>  
-
-  <div class="row">
-    <div class="col-md-12">
-      <h3>List of tags :</h3>
-      <ul id="tag_list"></ul>
-    </div>
+    
   </div>
+
+  <div class="col-md-4" style="height: 500px;">
+    
+    <h3>Chat</h3>
+
+    <ol id="chat_text"></ol>
+    
+    <div class="input-group">
+      <input id="chat_input" type="text" class="form-control" name="message" autocomplete="off">
+      <span class="input-group-btn">
+        <button id="chat_button" class="btn btn-default" type="button">Send</button>
+      </span>
+    </div>
+
+  </div>
+
   
 
+</div>  
+
+<div class="row">
+  <div class="col-md-12">
+    <h3>List of tags :</h3>
+    <ul id="tag_list" style="list-style-type: none; padding: 0 0 0 0">
+    </ul>
+  </div>
 </div>
 
 <!-- Scripts -->
@@ -192,6 +189,26 @@
     return '<div class="avatar"></div><div class="message"><p>' + message + '</p><time datetime="' + date.toISOString() + '">' + date.toLocaleString() + '</time></div>';
   }
 
+  function createTagInList(label) {
+    return '<div class="well">' +
+              '<button type="button" class="close" style="color:#e74c3c" onClick="sendRemoveTag(\''+label+'\');" aria-label="Close">' +
+                '<span class="glyphicon glyphicon-remove"></span>' +
+              '</button><button type="button" class="close" style="color:rgb(24, 188, 156)" onClick="sendConfirmTag(\''+label+'\');" aria-label="Close">' +
+                '<span class="glyphicon glyphicon-ok"></span>'+
+              '</button>'+
+                label +
+            '</div>';
+  }
+
+  function sendRemoveTag(label) {
+    socket.emit('tag_delete', label);
+    removeTag(label);
+  }
+
+  function sendConfirmTag(label) {
+    alert('TODO');
+  }
+
   function getMousePos(canvas, event){
       var rect = canvas.getBoundingClientRect();
       return {
@@ -212,13 +229,8 @@
       
       var newTag = document.createElement('li');
       newTag.id = 'tag_' + tag.label;
-      newTag.innerHTML = tag.label;
+      newTag.innerHTML = createTagInList(tag.label);
       tagList.appendChild(newTag);
-      
-      newTag.onclick = function() {
-          socket.emit('tag_delete', this.innerHTML);
-          removeTag(this.innerHTML);
-      };
       
       context.fillText(tag.label, tag.position.x, tag.position.y);
   }
