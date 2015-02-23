@@ -1,6 +1,18 @@
-footer {
+html {
+  position: relative;
+  min-height: 100%;
+}
+body {
+  /* Margin bottom by footer height */
+  margin-bottom: 60px;
+}
+.footer {
   padding: 20px 20px;
   margin-top: 30px;
-  margin-bottom: -10px;
   background-color: rgb(24, 188, 156);
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  /* Set the fixed height of the footer here */
+  height: 60px;
 }
