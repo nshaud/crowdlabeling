@@ -31,6 +31,10 @@
 
         <canvas id="canvas" width=300 height=300></canvas>
       </div>
+
+      <h3>List of tags :</h3>
+      <ul id="tag_list">
+      </ul>
       
     </div>
 
@@ -65,6 +69,9 @@
 
   var button = document.getElementById('chat_button');
   var input = document.getElementById('chat_input');
+  var tagList = document.getElementById('tag_list');
+
+  var allTags = {};
 
   // Add listener to the button to send messages
   button.onclick = function(){
@@ -166,6 +173,11 @@
       hideProgressConfirm();
   });
 
+  socket.on('tag_delete', function(tag) {
+      console.log('Deleting tag : ' + tag);
+      removeTag(tag);
+  });
+
   // Declaration of auxiliary functions
 
   function createMessageDiv(message) {
@@ -182,10 +194,36 @@
   }
 
   function insertTag(context, tag) {
+      // TODO : we should make sure that two tags never overlap, some nasty display bugs could appear otherwise
       context.lineWidth = 1;
       context.fillStyle = "#CC00FF";
       context.lineStyle = "#ffff00";
+      var fontSize = 18;
+      context.font = fontSize + "px" + " " + "serif";
+      var measures = { width: context.measureText(tag.label).width, height: fontSize , x: tag.position.x, y: tag.position.y - fontSize}; 
+      allTags[tag.label] = { measures: measures, imageData: context.getImageData(measures.x , measures.y, measures.width, measures.height) };
+      
+      var newTag = document.createElement('li');
+      newTag.id = 'tag_' + tag.label;
+      newTag.innerHTML = tag.label;
+      tagList.appendChild(newTag);
+      
+      newTag.onclick = function() {
+          socket.emit('tag_delete', this.innerHTML);
+          removeTag(this.innerHTML);
+      };
+      
       context.fillText(tag.label, tag.position.x, tag.position.y);
+  }
+
+  function removeTag(label) {
+     var canvas = document.getElementById('canvas');
+     var context = canvas.getContext('2d');
+     var tag = allTags[label];
+     context.clearRect(tag.measures.x, tag.measures.y, tag.measures.width, tag.measures.height);
+     context.putImageData(tag.imageData, tag.measures.x, tag.measures.y);
+     document.getElementById('tag_' + label).remove();
+     delete allTags[label];
   }
 
   function hideProgressConfirm() {

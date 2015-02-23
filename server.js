@@ -47,7 +47,6 @@ var numberOfClientsInRooms = [];
 var numberOfConfirmationsInRooms = [];
 
 // Broadcast chat messages
-// TODO : restrict messages to people in the same room
 io.sockets.on('connection', function(socket) {
     socket.room = "lobby";
 
@@ -111,6 +110,11 @@ io.sockets.on('connection', function(socket) {
 
         console.log('[' + socket.room + '] A client canceled the tag : ' + tag.label);
         socket.broadcast.to(socket.room).emit('tag_cancel', tag);
+    });
+
+    socket.on('tag_delete', function(tag) {
+        console.log('[' + socket.room + '] A client deleted the tag : ' + tag);
+        socket.broadcast.to(socket.room).emit('tag_delete', tag);
     });
 
     socket.on('disconnect', function() {
