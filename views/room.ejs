@@ -7,9 +7,9 @@
 
   <p>Room number : <%= room %></p>
   
-  <div class="row" style="height: 500px;">
+  <div class="row" >
     
-    <div class="col-md-8" style="height: 100%;">
+    <div class="col-md-8" style="height: 500px;">
 
       <h3>Image : <%= image_path %></h3>
       
@@ -32,13 +32,11 @@
         <canvas id="canvas" width=300 height=300></canvas>
       </div>
 
-      <h3>List of tags :</h3>
-      <ul id="tag_list">
-      </ul>
+      
       
     </div>
 
-    <div class="col-md-4" style="height: 100%;">
+    <div class="col-md-4" style="height: 500px;">
       
       <h3>Chat</h3>
 
@@ -53,10 +51,19 @@
 
     </div>
 
+    
+
+  </div>  
+
+  <div class="row">
+    <div class="col-md-12">
+      <h3>List of tags :</h3>
+      <ul id="tag_list"></ul>
+    </div>
   </div>
+  
 
 </div>
-
 
 <!-- Scripts -->
 <script src="/socket.io/socket.io.js"></script>

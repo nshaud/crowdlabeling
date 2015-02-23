@@ -6,15 +6,32 @@
     <!-- Add CSS Files -->
     <!-- <link rel="stylesheet" href="/bower_components/bootstrap/dist/css/bootstrap.css" /> -->
     <link rel="stylesheet" type="text/css" href="/styles/bootstrap-flaty.min.css">
+    <link rel="stylesheet" type="text/css" href="/styles/layout.css">
 
   </head>
 
   <body>
-    <% if (content == 'room') { %>
-      <% include room.ejs %>
-    <% } else { %>
-      Welcome.
-    <% } %>
+    <nav class="navbar navbar-default navbar-top">
+      <div class="container">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">CrowdLabeling</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container">
+      <% if (content == 'room') { %>
+        <% include room.ejs %>
+      <% } else { %>
+        Welcome.
+      <% } %>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <p>CrowdLabeling - Groupware and Collaborative Interaction</p>
+      </div>
+    </footer>
 
     <!-- Add JavaScript Files -->
     <script src="/bower_components/jquery/dist/jquery.js"></script>
