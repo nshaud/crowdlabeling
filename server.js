@@ -44,12 +44,13 @@ app.use(function(req, res, next){
     res.send(404, 'Page not found');
 });
 
-var numberOfClientsInRooms = [];
-var numberOfConfirmationsInRooms = [];
+var chatRooms = [];
+var clients = {};
 
 // Broadcast chat messages
 io.sockets.on('connection', function(socket) {
     socket.room = "lobby";
+    clients[socket.id] = socket;
 
     socket.on('chat_message', function(message) {
         socket.broadcast.to(socket.room).emit('chat_message', message);
@@ -57,74 +58,138 @@ io.sockets.on('connection', function(socket) {
     });
 
     socket.on('join_room', function(room) {
-        numberOfClientsInRooms[room] = numberOfClientsInRooms[room] ? numberOfClientsInRooms[room] + 1 : 1;
-
         socket.room = room;
         socket.join(socket.room);
-        socket.broadcast.to(socket.room).emit('user_enter', 'A user entered the room');
+
+        if (!chatRooms[room]) {
+            // this room does not exist, create room
+            chatRooms[room] = new ChatRoom(room);
+            console.log('[' + chatRooms[room].name + '] Room created.');
+        }
+        chatRooms[room].numberOfClients++;
+        
+        socket.broadcast.to(socket.room).emit('chat_event', 'A user entered the room');
 
         console.log('[' + socket.room + '] A client entered the room.');
-        console.log('[' + socket.room + '] Number of clients : ' + numberOfClientsInRooms[room]);
+        console.log('[' + socket.room + '] Number of clients : ' + chatRooms[room].numberOfClients);
     });
 
     socket.on('tag_intent', function(tag) {
-        numberOfConfirmationsInRooms[socket.room] = 1;
-        socket.broadcast.to(socket.room).emit('tag_intent', tag);
+
         console.log('[' + socket.room + '] A client wants to insert a new tag : ' + tag.label);
+        
+        tag = chatRooms[socket.room].addTag(tag.label, tag.position);
+        tag.numberOfConfirmations++; // confirmation of the creator of the tag
+
+        // send intent to the creator of the tag
+        // this is used to send the tag id, created in the server
+        clients[socket.id].emit('tag_intent_self', tag);
+        // send intent to others in the room
+        socket.broadcast.to(socket.room).emit('tag_intent', tag);
 
         // send confirmation of the user who wants to create the tag
         var data = {
             tag: tag,
-            nConfirms: numberOfConfirmationsInRooms[socket.room],
-            nClients: numberOfClientsInRooms[socket.room]
+            numberOfClients: chatRooms[socket.room].numberOfClients
         };
         io.sockets.in(socket.room).emit('tag_confirm', data);
 
-        if (numberOfConfirmationsInRooms[socket.room] == numberOfClientsInRooms[socket.room]) {
+        if (tag.numberOfConfirmations == chatRooms[socket.room].numberOfClients) {
             console.log('[' + socket.room + '] Tag creation : ' + tag.label);
             io.sockets.in(socket.room).emit('tag_creation', tag);
         }
     });
 
-    socket.on('tag_confirm', function(tag) {
-        numberOfConfirmationsInRooms[socket.room]++;
+    socket.on('tag_confirm', function(id) {
+        
+        var tag = chatRooms[socket.room].getTag(id);
+        tag.numberOfConfirmations++;
+
+        var numberOfClients = chatRooms[socket.room].numberOfClients;
 
         console.log('[' + socket.room + '] A client confirmed the tag : ' + tag.label);
-        console.log('[' + socket.room + '] Number of confirmations : ' + numberOfConfirmationsInRooms[socket.room]);
-        console.log('[' + socket.room + '] Number of clients : ' + numberOfClientsInRooms[socket.room]);
+        console.log('[' + socket.room + '] Number of confirmations : ' + tag.numberOfConfirmations);
+        console.log('[' + socket.room + '] Number of clients : ' + numberOfClients);
 
         var data = {
             tag: tag,
-            nConfirms: numberOfConfirmationsInRooms[socket.room],
-            nClients: numberOfClientsInRooms[socket.room]
+            numberOfClients: numberOfClients
         };
         io.sockets.in(socket.room).emit('tag_confirm', data);
 
-        if (numberOfConfirmationsInRooms[socket.room] == numberOfClientsInRooms[socket.room]) {
+        if (tag.numberOfConfirmations == numberOfClients) {
             console.log('[' + socket.room + '] Tag creation : ' + tag.label);
             io.sockets.in(socket.room).emit('tag_creation', tag);
         }
     });
 
-    socket.on('tag_cancel', function(tag) {
-        numberOfConfirmationsInRooms[socket.room] = 0;
+    socket.on('tag_delete', function(id) {
+        var tag = chatRooms[socket.room].getTag(id); 
 
-        console.log('[' + socket.room + '] A client canceled the tag : ' + tag.label);
-        socket.broadcast.to(socket.room).emit('tag_cancel', tag);
-    });
+        console.log('[' + socket.room + '] A client deleted the tag : ' + tag.label);
+        io.sockets.in(socket.room).emit('tag_delete', tag);
 
-    socket.on('tag_delete', function(tag) {
-        console.log('[' + socket.room + '] A client deleted the tag : ' + tag);
-        socket.broadcast.to(socket.room).emit('tag_delete', tag);
+        chatRooms[socket.room].removeTag(id);
     });
 
     socket.on('disconnect', function() {
-        numberOfClientsInRooms[socket.room]--;
-        console.log('[' + socket.room + '] A client disconnected');
-        console.log('[' + socket.room + '] Number of clients : ' + numberOfClientsInRooms[socket.room]);
+
+        if (chatRooms[socket.room]) {
+        
+            chatRooms[socket.room].numberOfClients--;
+
+            console.log('[' + socket.room + '] A client disconnected');
+            console.log('[' + socket.room + '] Number of clients : ' + chatRooms[socket.room].numberOfClients);
+
+            if (chatRooms[socket.room].numberOfClients === 0) {
+                console.log('[' + chatRooms[socket.room].name + '] Room deleted.');
+                delete chatRooms[socket.room];
+            }
+        }
+        
+        delete clients[socket.id];
     });
 
     // console.log('A new client has connected !');
 });
+
+// Auxiliar classes
+
+// Represents a chat room
+function ChatRoom(name) {
+    this.name = name;
+    this.numberOfClients = 0;   
+    this.tagIdCount = 0;        // used for generating ids for the tags. It should never be decremented !
+    this.tags = [];             // list of tags used in the chat room
+}
+ChatRoom.prototype.getTag = function (id) {
+    for (var i = 0; i < this.tags.length; i++) {
+        if (this.tags[i].id == id) {
+            return this.tags[i];
+        }
+    }
+};
+ChatRoom.prototype.addTag = function (label, position) {
+    var tag = new Tag(this.tagIdCount, label, position);
+    this.tags.push(tag);
+    this.tagIdCount++;
+    return tag;
+};
+ChatRoom.prototype.removeTag = function (id) {
+    for (var i = 0; i < this.tags.length; i++) {
+        if (this.tags[i].id == id) {
+            this.tags.splice(i, 1);
+        }
+    }
+};
+
+// Represents a tag
+function Tag(id, label, position) {
+    this.id = id;
+    this.label = label;
+    this.position = position;
+    this.numberOfConfirmations = 0; 
+}
+
 
 

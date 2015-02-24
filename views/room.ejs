@@ -2,9 +2,9 @@
 
 <h1>CrowdLabeling</h1>
 
-<h3>A collaborative app for image labeling</h3>
+<h4>A web application for labeling images together !</h4>
 
-<p>Room number : <%= room %></p>
+<p>You are in the room : <%= room %></p>
 
 <div class="row" >
   
@@ -13,7 +13,7 @@
     <h3>Image : <%= image_path %></h3>
     
     <div id="image">
-      <div id="overlay" style="display: none;"> </div>
+      <!-- <div id="overlay" style="display: none;"> </div>
       
       <div id="progress_confirm" style="display: none;">
         <div style="margin-top: 90px;">
@@ -26,7 +26,7 @@
           </div>
         </div>
         
-      </div>
+      </div> -->
 
       <canvas id="canvas" width=300 height=300></canvas>
     </div>
@@ -56,7 +56,7 @@
 
 <div class="row">
   <div class="col-md-12">
-    <h3>List of tags :</h3>
+    <h3>List of tags</h3>
     <ul id="tag_list" style="list-style-type: none; padding: 0 0 0 0">
     </ul>
   </div>
@@ -123,7 +123,6 @@
             label: tag,
             position: mousePos
           };
-          showProgressConfirm();
           socket.emit('tag_intent', data);
         }
       });
@@ -139,8 +138,8 @@
   });
 
   // Inform when another user enters the room
-  socket.on('user_enter', function(message) {
-      console.log('Chat message received : ' + message);
+  socket.on('chat_event', function(message) {
+      console.log('Chat event received : ' + message);
       var new_message = document.createElement('li');
       new_message.className = 'info';
       new_message.innerHTML = '<div>- ' + message + ' -</div>';
@@ -150,36 +149,38 @@
   // receive new tags from other clients
   socket.on('tag_intent', function(tag) {
       console.log('New tag intent : ' + tag.label);
-      bootbox.confirm('User wants to insert the tag: ' + tag.label, function (confirmation) {
-        if (confirmation) {
-          socket.emit('tag_confirm', tag);
-          showProgressConfirm();
-        } else {
-          socket.emit('tag_cancel', tag);
-        }
-      });
       
+      var newTag = document.createElement('li');
+      newTag.id = 'tag_' + tag.id;
+      newTag.innerHTML = createTagInList(tag);
+      tagList.appendChild(newTag);
+      
+  });
+  // receive tag intent from itself : used to get the tag id from the server basically
+  socket.on('tag_intent_self', function(tag) {
+      console.log('self');
+      var newTag = document.createElement('li');
+      newTag.id = 'tag_' + tag.id;
+      newTag.innerHTML = createTagInListSelf(tag);
+      tagList.appendChild(newTag);
   });
   
   socket.on('tag_confirm', function(data) {
-      updateProgressConfirm(data.tag.label, data.nConfirms, data.nClients);
-  });
-
-  socket.on('tag_cancel', function(tag) {
-      console.log('Tag cancel : ' + tag.label);
-      bootbox.hideAll();
-      hideProgressConfirm();
+      var progress = (data.tag.numberOfConfirmations/data.numberOfClients) * 100;
+      $('#tag_' + data.tag.id + ' div#progress_bar').css('width', progress + '%');
+      // updateProgressConfirm(data.tag, data.numberOfClients);
   });
 
   socket.on('tag_creation', function(tag) {
       console.log('Tag creation : ' + tag.label);
+      $('#tag_' + tag.id + ' .progress').remove();
       insertTag(context, tag);
-      hideProgressConfirm();
   });
 
   socket.on('tag_delete', function(tag) {
-      console.log('Deleting tag : ' + tag);
-      removeTag(tag);
+      console.log('Tag delete : ' + tag.label);
+      $('#tag_' + tag.id).remove();
+      removeTag(tag.id);
   });
 
   // Declaration of auxiliary functions
@@ -189,24 +190,45 @@
     return '<div class="avatar"></div><div class="message"><p>' + message + '</p><time datetime="' + date.toISOString() + '">' + date.toLocaleString() + '</time></div>';
   }
 
-  function createTagInList(label) {
-    return '<div class="well">' +
-              '<button type="button" class="close" style="color:#e74c3c" onClick="sendRemoveTag(\''+label+'\');" aria-label="Close">' +
+  function createTagInList(tag) {
+    return  '<div class="well" style="padding: 10px;">' +
+              '<button type="button" class="close" style="color:#e74c3c" onClick="sendRemoveTag(\''+tag.id+'\');" aria-label="Close">' +
                 '<span class="glyphicon glyphicon-remove"></span>' +
-              '</button><button type="button" class="close" style="color:rgb(24, 188, 156)" onClick="sendConfirmTag(\''+label+'\');" aria-label="Close">' +
-                '<span class="glyphicon glyphicon-ok"></span>'+
-              '</button>'+
-                label +
+              '</button>' +
+              '<button type="button" class="close" style="color:rgb(24, 188, 156)" onClick="sendConfirmTag(\''+tag.id+'\', \''+tag.label+'\');" aria-label="Close">' +
+                '<span class="glyphicon glyphicon-ok"></span>' +
+              '</button>' +
+              '<div>'+tag.label+'</div>' +
+              '<div class="progress" style="background-color: white; margin-bottom: 0px; margin-top: 8px;">' +
+                '<div id="progress_bar" class="progress-bar progress-bar-success progress-bar-striped active" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: 0%;">' +
+                  '<span class="sr-only">60% Complete</span>' +
+                '</div>' +
+              '</div>' +
             '</div>';
   }
 
-  function sendRemoveTag(label) {
-    socket.emit('tag_delete', label);
-    removeTag(label);
+  function createTagInListSelf(tag) {
+    return  '<div class="well" style="padding: 10px;">' +
+              '<button type="button" class="close" style="color:#e74c3c" onClick="sendRemoveTag(\''+tag.id+'\');" aria-label="Close">' +
+                '<span class="glyphicon glyphicon-remove"></span>' +
+              '</button>' +
+              '<div>'+tag.label+'</div>' +
+              '<div class="progress" style="background-color: white; margin-bottom: 0px; margin-top: 8px;">' +
+                '<div id="progress_bar" class="progress-bar progress-bar-success progress-bar-striped active" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: 0%;">' +
+                  '<span class="sr-only">60% Complete</span>' +
+                '</div>' +
+              '</div>' +
+            '</div>';
   }
 
-  function sendConfirmTag(label) {
-    alert('TODO');
+  function sendRemoveTag(id) {
+      socket.emit('tag_delete', id);
+  }
+
+  function sendConfirmTag(id, label) {
+      socket.emit('tag_confirm', id);
+      $('#tag_' + id + ' button').remove();
+      $('#tag_' + id + ' div.well').prepend('<button type="button" class="close" style="color:#e74c3c" onClick="sendRemoveTag(\''+id+'\');" aria-label="Close"><span class="glyphicon glyphicon-remove"></span></button>');
   }
 
   function getMousePos(canvas, event){
@@ -225,24 +247,19 @@
       var fontSize = 18;
       context.font = fontSize + "px" + " " + "serif";
       var measures = { width: context.measureText(tag.label).width, height: fontSize , x: tag.position.x, y: tag.position.y - fontSize}; 
-      allTags[tag.label] = { measures: measures, imageData: context.getImageData(measures.x , measures.y, measures.width, measures.height) };
-      
-      var newTag = document.createElement('li');
-      newTag.id = 'tag_' + tag.label;
-      newTag.innerHTML = createTagInList(tag.label);
-      tagList.appendChild(newTag);
-      
+      allTags[tag.id] = { measures: measures, imageData: context.getImageData(measures.x , measures.y, measures.width, measures.height) };
       context.fillText(tag.label, tag.position.x, tag.position.y);
   }
 
-  function removeTag(label) {
-     var canvas = document.getElementById('canvas');
-     var context = canvas.getContext('2d');
-     var tag = allTags[label];
-     context.clearRect(tag.measures.x, tag.measures.y, tag.measures.width, tag.measures.height);
-     context.putImageData(tag.imageData, tag.measures.x, tag.measures.y);
-     document.getElementById('tag_' + label).remove();
-     delete allTags[label];
+  function removeTag(id) {
+      if (allTags[id]) {
+          var canvas = document.getElementById('canvas');
+          var context = canvas.getContext('2d');
+          var tag = allTags[id];
+          context.clearRect(tag.measures.x, tag.measures.y, tag.measures.width, tag.measures.height);
+          context.putImageData(tag.imageData, tag.measures.x, tag.measures.y);
+          delete allTags[id];
+      }
   }
 
   function hideProgressConfirm() {
@@ -256,10 +273,13 @@
       document.getElementById('progress_confirm').style.display = 'block';
   }
 
-  function updateProgressConfirm(tag, nbOfConfirms, nbOfClients) {
-    var progress = (nbOfConfirms/nbOfClients) * 100;
-    document.getElementById('progress_bar').style.width = progress + '%';
-    document.getElementById('tag_label').innerHTML = 'Tag "' + tag + '" is being processed.';
+  function updateProgressConfirm(tag, numberOfClients) {
+    console.log(tag);
+    console.log(numberOfClients);
+
+    // var progress = (nbOfConfirms/nbOfClients) * 100;
+    // document.getElementById('progress_bar').style.width = progress + '%';
+    // document.getElementById('tag_label').innerHTML = 'Tag "' + tag + '" is being processed.';
   }
 
 </script>
