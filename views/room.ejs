@@ -1,6 +1,6 @@
 <link rel="stylesheet" type="text/css" href="/styles/room.css">
 
-<h1>CrowdLabeling</h1>
+<h1>CrowdLabeling <span class="glyphicon glyphicon-tags" style="margin-left: 10px;"></span></h1>
 
 <h4>A web application for labeling images together !</h4>
 
@@ -61,6 +61,8 @@
     </ul>
   </div>
 </div>
+
+<div class="notification"> </div>
 
 <!-- Scripts -->
 <script src="/socket.io/socket.io.js"></script>
@@ -155,6 +157,7 @@
       newTag.innerHTML = createTagInList(tag);
       tagList.appendChild(newTag);
       
+      pinAlert('info', 'Tag "'+tag.label+'" waiting.', tag.id);
   });
   // receive tag intent from itself : used to get the tag id from the server basically
   socket.on('tag_intent_self', function(tag) {
@@ -175,12 +178,16 @@
       console.log('Tag creation : ' + tag.label);
       $('#tag_' + tag.id + ' .progress').remove();
       insertTag(context, tag);
+
+      pinAlert('success', 'Tag "'+tag.label+'" created!', tag.id);
   });
 
   socket.on('tag_delete', function(tag) {
       console.log('Tag delete : ' + tag.label);
       $('#tag_' + tag.id).remove();
       removeTag(tag.id);
+
+      pinAlert('danger', 'Tag "'+tag.label+'" deleted!', tag.id);
   });
 
   // Declaration of auxiliary functions
@@ -223,12 +230,16 @@
 
   function sendRemoveTag(id) {
       socket.emit('tag_delete', id);
+      // remove alerts related to this tag
+      $('#tag_' + id + '_alert').remove();
   }
 
   function sendConfirmTag(id, label) {
       socket.emit('tag_confirm', id);
       $('#tag_' + id + ' button').remove();
       $('#tag_' + id + ' div.well').prepend('<button type="button" class="close" style="color:#e74c3c" onClick="sendRemoveTag(\''+id+'\');" aria-label="Close"><span class="glyphicon glyphicon-remove"></span></button>');
+      // remove alerts related to this tag
+      $('#tag_' + id + '_alert').remove();
   }
 
   function getMousePos(canvas, event){
@@ -280,6 +291,24 @@
     // var progress = (nbOfConfirms/nbOfClients) * 100;
     // document.getElementById('progress_bar').style.width = progress + '%';
     // document.getElementById('tag_label').innerHTML = 'Tag "' + tag + '" is being processed.';
+  }
+
+  function pinAlert(type, message, tagId) {
+
+    var alertId = 'tag_' + tagId + '_alert';
+
+    var alert = '<div id="'+alertId+'" class="alert alert-'+type+' fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><div>'+message+'</div></div>';
+    
+    $('.notification').append(alert);
+    if (type === 'info') {
+      $('#'+alertId+' div').css('cursor', 'pointer');
+      $('#'+alertId+' div').click(function (){
+        console.log('#tag_'+tagId);
+          $('html, body').animate({
+              scrollTop: ($('#tag_'+tagId).offset().top)
+          },500);
+      });
+    }
   }
 
 </script>

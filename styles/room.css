@@ -100,3 +100,12 @@ canvas {
     padding-left: 20px;
     padding-right: 20px;
 }
+
+.notification {
+    position: absolute;
+    top: 75px;
+    right: 10px;
+}
+.alert {
+    margin-bottom: 10px; 
+}
