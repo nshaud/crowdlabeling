@@ -10,6 +10,8 @@ var server = app.listen(8080);
 // Init socket.io
 var io = require('socket.io')(server);
 
+var rooms = 0;
+
 app.use('/styles', express.static(__dirname + '/styles'));
 app.use('/scripts', express.static(__dirname + '/scripts'));
 app.use('/bower_components', express.static(__dirname + '/bower_components'));
@@ -17,13 +19,14 @@ app.use('/fonts', express.static(__dirname + '/bower_components/bootstrap/fonts'
 
 // Root renders the layout
 app.get('/', function(req, res) {
-    res.render('layout.ejs', {content: "hello"});
+    res.render('layout.ejs', {content: "welcome", rooms: rooms});
 });
 
 // Renders the room
 app.get('/room/:room/:image', function(req, res) {
     var data = { 
         room : req.params.room, 
+        image : req.params.image,
         image_path : 'images/' + req.params.image, 
         content : 'room', 
         base_path : "http://" + req.headers.host + "/" 
@@ -144,6 +147,7 @@ io.sockets.on('connection', function(socket) {
             if (chatRooms[socket.room].numberOfClients === 0) {
                 console.log('[' + chatRooms[socket.room].name + '] Room deleted.');
                 delete chatRooms[socket.room];
+                rooms = rooms - 1;
             }
         }
         
@@ -161,6 +165,7 @@ function ChatRoom(name) {
     this.numberOfClients = 0;   
     this.tagIdCount = 0;        // used for generating ids for the tags. It should never be decremented !
     this.tags = [];             // list of tags used in the chat room
+    rooms = rooms + 1;
 }
 ChatRoom.prototype.getTag = function (id) {
     for (var i = 0; i < this.tags.length; i++) {
