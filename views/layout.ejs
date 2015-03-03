@@ -26,9 +26,13 @@
       <% if (content == 'room') { %>
         <% include room.ejs %>
       <% } else { %>
-        Welcome.
+        <h2>Welcome.</h2>
 
-        <a href="/room/<%= rooms + 1 %>/1">Create a new room</a>
+	<p><strong>CrowdLabeling</strong> is a web-application written in <em>NodeJS</em> allowing users to label pictures together ! Labels are then saved on the server and can be used for any purpose.</p>
+
+        <p>
+		<button class="btn btn-primary" href="/room/<%= rooms + 1 %>/1">Create a new room</button>
+	</p>
       <% } %>
     </div>
 
