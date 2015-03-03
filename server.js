@@ -81,6 +81,25 @@ io.sockets.on('connection', function(socket) {
         console.log('[' + socket.room + '] Number of clients : ' + chatRooms[room].numberOfClients);
     });
 
+    socket.on('pass_intent', function(image){
+        var next_image = image + 1;
+
+        room = chatRooms[socket.room];
+        room.passConfirmations++;
+        console.log('[' + socket.room + '] A client wants to switch to the next image (' + next_image + ') ' + room.passConfirmations + ' users agree');
+        if(room.passConfirmations == chatRooms[socket.room].numberOfClients){
+            io.sockets.in(socket.room).emit('pass_confirm', next_image);
+            console.log('[' + socket.room + '] Switching to image ' + next_image);
+        } else {
+            socket.broadcast.to(socket.room).emit('pass_intent', image);
+        }
+    });
+
+    socket.on('pass_deny', function(){
+        chatRooms[socket.room].passConfirmations = 0;
+        io.sockets.in(socket.room).emit('pass_deny', '');
+    });
+
     socket.on('tag_intent', function(tag) {
 
         console.log('[' + socket.room + '] A client wants to insert a new tag : ' + tag.label);
@@ -166,6 +185,7 @@ io.sockets.on('connection', function(socket) {
 // Represents a chat room
 function ChatRoom(name) {
     this.name = name;
+    this.passConfirmations = 0;
     this.numberOfClients = 0;   
     this.tagIdCount = 0;        // used for generating ids for the tags. It should never be decremented !
     this.tags = [];             // list of tags used in the chat room
