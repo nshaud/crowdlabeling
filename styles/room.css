@@ -109,3 +109,7 @@ canvas {
 .alert {
     margin-bottom: 10px; 
 }
+
+#pass_button {
+  float: right;
+}

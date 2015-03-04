@@ -41,7 +41,15 @@ app.get('/room/:room/:image', function(req, res) {
 // Renders the image
 app.get('/images/:image', function(req, res) {
     res.setHeader('Content-Type', 'image/png');
-    var img = fs.readFileSync('images/' + req.params.image + '.png');
+    
+    var pathToImage = 'images/' + req.params.image;
+    
+    var img;
+    if (fs.existsSync(pathToImage + '.png')) {
+        img = fs.readFileSync(pathToImage + '.png');
+    } else {
+        img = fs.readFileSync(pathToImage + '.jpg');
+    }
     res.end(img, 'binary');
 });
 

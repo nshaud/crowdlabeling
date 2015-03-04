@@ -1,20 +1,26 @@
 <link rel="stylesheet" type="text/css" href="/styles/room.css">
 
-<h4>A web application for labeling images together !</h4>
+<div class="row">
+  <div class="col-md-9">
+    <h4>A web application for labeling images together !</h4>
+    <p>You are in the room : <%= room %> (share this <a href="/room/<%= room %>/<%= image %>">link</a> with others)</p>
+  </div>
+  
+  <div class="col-md-3"><button class="btn btn-primary" id="pass_button">Pass</button></div>
 
-<p>You are in the room : <%= room %> (share this <a href="/room/<%= room %>/<%= image %>">link</a> with others)</p>
+  <div class="col-md-12" id="pass_box" style="display: none;" />A user wants to pass. Approve ? 
+    <button onclick="socket.emit('pass_intent', <%= image %>);" class="btn btn-success"/>Yes</button>
+    <button class="btn btn-danger" onclick="socket.emit('pass_deny', '');">No</button>
+  </div>
+</div>
 
 <div class="row" >
   
   <div class="col-md-8" style="height: 500px;">
 
     <h3>Image : <%= image_path %></h3>
-
-    <div><button class="btn btn-secondary" id="pass_button">Pass</button></div>
-
-    <div id="pass_box" style="display: none;" />A user wants to pass. Approve ? <button onclick="socket.emit('pass_intent', <%= image %>);" class="btn btn-success"/>Yes</button> <button class="btn btn-danger" onclick="socket.emit('pass_deny', '');">No</button></div>
     
-    <div id="image" style="max-width: 80%; max-height: 100%; overflow: scroll;">
+    <div id="image" style="max-width: 100%; max-height: 100%; overflow: scroll;">
       <!-- <div id="overlay" style="display: none;"> </div>
       
       <div id="progress_confirm" style="display: none;">
@@ -113,14 +119,14 @@
   var context = canvas.getContext('2d');
 
   var img = new Image();
-  img.src = '<%= base_path + image_path %>'
+  img.src = '<%= base_path + image_path %>';
   console.log('<%= base_path + image_path %>');
-  canvas.height = img.height;
-  canvas.width = img.width;
-  document.getElementById('image').height = img.height;
-  document.getElementById('image').width = img.width;
-  img.onload = function(){
-      context.drawImage(img, 0, 0);
+  img.onload = function() {
+    canvas.height = img.height;
+    canvas.width = img.width;
+    document.getElementById('image').height = img.height;
+    document.getElementById('image').width = img.width;
+    context.drawImage(img, 0, 0);
   };
 
   canvas.addEventListener('mousedown', function(event){
