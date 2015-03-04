@@ -168,6 +168,8 @@ io.sockets.on('connection', function(socket) {
 
     socket.on('disconnect', function() {
 
+        socket.broadcast.to(socket.room).emit('chat_event', 'A user left the room');
+
         if (chatRooms[socket.room]) {
         
             chatRooms[socket.room].numberOfClients--;

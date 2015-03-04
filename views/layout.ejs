@@ -18,21 +18,21 @@
         </div>
       </div>
     </nav>
-    <div class="container">
-      <h1>CrowdLabeling <img src="/public/logo.png" style="height: 60px; margin-left: 10px;"></h1>
-    </div>
 
     <div class="container">
       <% if (content == 'room') { %>
         <% include room.ejs %>
       <% } else { %>
+
+        <img src="/public/logo_text.png" style="width:100%; margin-bottom: 30px;">
+
         <h2>Welcome.</h2>
 
-	<p><strong>CrowdLabeling</strong> is a web-application written in <em>NodeJS</em> allowing users to label pictures together ! Labels are then saved on the server and can be used for any purpose.</p>
+        <p><strong>CrowdLabeling</strong> is a web-application written in <em>NodeJS</em> allowing users to label pictures together !</p>
+        <p>Labels are then saved on the server and can be used for any purpose.</p>
 
-        <p>
-		<a href="/room/<%= rooms + 1 %>/1" title=""><button id="create_room_btn" class="btn btn-primary">Create a new room</button></a>
-	</p>
+        <a href="/room/<%= rooms + 1 %>/1" title=""><button id="create_room_btn" class="btn btn-primary">Create a new room</button></a>
+
       <% } %>
     </div>
 

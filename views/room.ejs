@@ -1,7 +1,11 @@
 <link rel="stylesheet" type="text/css" href="/styles/room.css">
 
 <div class="row">
+  <h1>Crowd<span style="color:#18BC9C; ">Labeling</span> <img src="/public/logo.png" style="height: 60px; margin-left: 10px;"></h1>
+</div>
+<div class="row">
   <div class="col-md-9">
+
     <h4>A web application for labeling images together !</h4>
     <p>You are in the room : <%= room %> (share this <a href="/room/<%= room %>/<%= image %>">link</a> with others)</p>
   </div>
@@ -164,7 +168,9 @@
   // Receive pass intent from other clients
   socket.on('pass_intent', function(image) {
       console.log('Received pass intent');
-      $('#pass_button').fadeOut();
+      if (!wantToPass) {
+        $('#pass_button').fadeOut();
+      }
       var pass_box = $('#pass_box');
       if(wantToPass || pass_box.is(":visible")){
       } else {
